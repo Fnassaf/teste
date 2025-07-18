@@ -1,0 +1,80 @@
+esphome:
+  name: sonoff_mini
+  platform: ESP8266
+  board: esp8285
+
+wifi:
+  ssid: "<YOUR_WIFI_SSID>"
+  password: "<YOUR_WIFI_PASSWORD>"
+
+  ap:
+    ssid: "Sonoff Mini"
+    password: "<AP_PASSWORD>"
+
+captive_portal:
+
+logger:
+
+api:
+  password: "<API_PASSWORD>"
+
+ota:
+  password: "<OTA_PASSWORD>"
+
+time:
+  - platform: homeassistant
+    id: esptime
+
+switch:
+  - platform: gpio
+    name: "Sonoff Mini Relay"
+    pin: GPIO12
+    id: relay
+    restore_mode: RESTORE_DEFAULT_OFF
+
+binary_sensor:
+  - platform: gpio
+    name: "Sonoff Mini Button"
+    pin:
+      number: GPIO0
+      mode: INPUT_PULLUP
+      inverted: true
+    on_press:
+      - if:
+          condition:
+            lambda: |-
+              auto t = id(esptime).now();
+              if (!t.is_valid()) return false;
+              return t.hour < 6;
+          then:
+            - homeassistant.service:
+                service: switch.toggle
+                data:
+                  entity_id: switch.closet
+          else:
+            - switch.toggle: relay
+  - platform: gpio
+    name: "External Switch"
+    pin:
+      number: GPIO4
+      mode: INPUT_PULLUP
+      inverted: true
+    on_press:
+      - if:
+          condition:
+            lambda: |-
+              auto t = id(esptime).now();
+              if (!t.is_valid()) return false;
+              return t.hour < 6;
+          then:
+            - homeassistant.service:
+                service: switch.toggle
+                data:
+                  entity_id: switch.closet
+          else:
+            - switch.toggle: relay
+
+status_led:
+  pin:
+    number: GPIO13
+    inverted: true
